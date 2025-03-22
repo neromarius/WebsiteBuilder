@@ -112,7 +112,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
         <CardContent className="p-6 flex flex-col flex-grow">
           <div className="flex justify-between items-start mb-3">
             <h3 className="text-xl font-bold">{title}</h3>
-            {rating > 0 && (
+            {rating !== null && rating !== undefined && rating > 0 && (
               <div className="flex items-center">
                 <motion.span 
                   className="text-yellow-500 mr-1"
