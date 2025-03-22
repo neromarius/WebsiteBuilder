@@ -369,12 +369,4 @@ export async function seedDatabase() {
   }
 }
 
-// If this script is run directly, seed the database
-if (require.main === module) {
-  seedDatabase()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("Seeding failed:", error);
-      process.exit(1);
-    });
-}
+// Already exported at the top of the file, no need for another export
