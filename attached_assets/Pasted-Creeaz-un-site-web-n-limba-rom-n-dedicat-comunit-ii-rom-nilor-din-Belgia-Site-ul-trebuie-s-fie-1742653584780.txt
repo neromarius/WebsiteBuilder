@@ -1,0 +1,158 @@
+Creează un site web în limba română dedicat comunității românilor din Belgia. Site-ul trebuie să
+fie rapid, sigur, să aibă cât mai puține dependențe externe și un design modern și atrăgător,
+inspirat de cele mai frumoase site-uri web (vezi https://platt.edu/blog/top-20-beautiful-websites/
+pentru inspirație în privința efectelor). Este esențial ca interfața să fie intuitivă și ușor de utilizat,
+chiar dacă va include multe funcționalități.
+Structura principală a site-ului (pagina principală cu secțiuni):
+●
+Acasă: Pagina principală trebuie să includă o scurtă prezentare a comunității, o zonă de
+anunțuri importante, un rezumat al activităților/noutăților din celelalte secțiuni, evenimente
+viitoare evidențiate, prezentarea câtorva servicii populare sau recent adăugate, un feed
+scurt cu ultimele știri, o scurtă galerie foto (dacă este implementată), un bloc dedicat
+informațiilor despre primăria Roeselare (cu link către o subpagină), și un îndemn clar la
+acțiune pentru a încuraja înregistrarea.
+●
+Servicii:
+○
+Serviciile vor fi prezentate cu imagini mari și o scurtă descriere pe pagina principală
+a secțiunii.
+○
+La apăsarea pe imagine, se va deschide o subpagină cu detalii complete despre
+serviciul respectiv.
+○
+Utilizatorii trebuie să aibă opțiuni diversificate pentru a-și prezenta serviciile,
+inclusiv: titlu, descriere detaliată, posibilitatea de a adăuga mai multe imagini (de
+înaltă calitate pentru utilizatorii premium, o singură imagine mai mică pentru
+utilizatorii non-premium), link-uri către rețelele sociale și bloguri, locația serviciului
+(posibil cu integrare hărți), detalii de contact (telefon, email), și opțiune de
+programare online.
+○
+Anumite opțiuni vor fi disponibile doar pentru utilizatorii cu plan premium (de
+exemplu, link-uri către mai multe rețele sociale, posibilitatea de a adăuga videouri,
+recenzii și ratinguri, oferte speciale, orar de lucru detaliat, sistem de
+calendar/programare avansat, portofoliu, certificări, listarea în mai multe categorii,
+evidențierea serviciului, statistici de vizualizare).
+●
+Chat: O secțiune de chat general în stil mIRC (simplificat), cu o listă de utilizatori activi,
+mesagerie privată între utilizatori (fără comenzi complicate), sunet opțional pentru mesaje
+noi, efecte vizuale moderne și moderare simplă (raportare și ștergere pentru admini).
+Trebuie să existe posibilitatea de a adăuga și alte subiecte de discuție.
+●
+Marketplace: O secțiune unde utilizatorii pot vinde, cumpăra sau schimba diverse lucruri
+(detalii suplimentare pot fi adăugate ulterior).
+●
+Evenimente: O secțiune pentru adăugarea de evenimente cu poze, descrieri, tag-uri,
+link-uri sociale și de GPS-poziție, împreună cu butoane de "Like" și "Particip"
+.
+●
+Știri: O secțiune unde se vor afișa automat știri relevante pentru românii din Belgia,
+preluate de pe platforme cunoscute din România și Belgia. Actualizarea știrilor ar trebui
+să se facă automat în fiecare dimineață la ora 5.
+Funcționalități Suplimentare:
+●
+Panou de Administrare: Un panou de administrare accesibil direct din chat, care să
+permită: gestionarea setărilor site-ului, activarea/dezactivarea funcțiilor mari (Marketplace,
+Premium, Evenimente), aprobarea manuală a serviciilor, produselor și postărilor
+utilizatorilor, monitorizarea activității utilizatorilor, promovarea/degradarea utilizatorilor
+(Admin, Moderator, Utilizator normal), și un sistem de raportare & feedback integrat.
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+Mesagerie Privată: Mesagerie privată între utilizatori și administratori, cu inbox și outbox,
+opțiune de blocare a utilizatorilor toxici și notificări pentru mesaje noi.
+Statistici Vizuale & Clasamente: Grafice cu activitatea utilizatorilor și clasamente ale
+celor mai activi membri.
+Secțiune de Reclamații și Sugestii: Un loc unde utilizatorii pot raporta probleme și
+propune idei.
+Funcționalități Ascunse: Un sistem de abonamente premium și un sistem de afiliere
+(care vor fi activate ulterior).
+Sistem de Badge-uri: Recompensarea activității utilizatorilor și a comportamentului
+pozitiv.
+Securitatea Conturilor: Opțiuni pentru recuperarea contului prin telefon sau rețele
+sociale, mecanisme de raportare, panou de administrare și aprobare manuală a
+serviciilor.
+Secțiunea "Ajutor între Români": Un forum pentru utilizatori să ceară și să ofere ajutor.
+Anunțuri Importante: O secțiune pentru postarea de anunțuri critice de către
+administratori.
+Secțiunea de Joburi: O platformă pentru angajatori să posteze oferte de muncă pentru
+comunitatea românească.
+Podcasturi & Videouri: O secțiune media pentru conținut relevant.
+Top Utilizatori Activi: Un sistem pentru a evidenția și recompensa membrii activi.
+Sondaje Comunitare: Întrebări săptămânale pentru a implica comunitatea.
+Streaming Kiss FM: Un player audio persistent pentru radio.
+Recomandări de Prieteni: Sugerarea de conexiuni bazate pe interese comune.
+Integrare Rețele Sociale: Opțiune pentru utilizatori să adauge profilurile lor sociale (cu
+verificare obligatorie a numărului de telefon).
+Funcționalitate de Banare: Posibilitatea de a bana utilizatorii care încalcă regulile de
+conduită.
+Efecte Vizuale Superbe: Efecte 3D pentru butoane, efecte active la scroll, și fundaluri
+active (inspirate de site-urile de top).
+Sistem de Misiuni și Recompense: Încurajarea implicării utilizatorilor prin gamificare.
+Sistem de Abonamente Premium: Pentru monetizare (va fi activat ulterior).
+Sistem de Afiliere: Recompensarea utilizatorilor pentru invitarea de noi membri (va fi
+activat ulterior).
+Administratori Suplimentari: Opțiunea de a numi alți administratori pe baza punctelor
+de badge.
+Informații Primăria Roeselare: O secțiune pe pagina principală cu un link către o
+subpagină dedicată informațiilor despre primăria Roeselare (https://www.roeselare.be/),
+incluzând date de contact, program de lucru, link-uri utile (documente, programări),
+obligațiile cetățenilor și alte informații relevante.
+Profiluri de Utilizator: Fiecare utilizator va putea avea un profil public cu poză de profil
+(o singură poză mai mică pentru utilizatorii non-premium, mai multe poze de înaltă calitate
+pentru utilizatorii premium), posibilitatea de a adăuga link-uri către rețelele sociale și
+bloguri, o secțiune "Despre mine"
+, interese (selectabile), locație (opțională) și o scurtă
+activitate recentă.
+Verificare Automată a Inactivității: Un sistem care verifică periodic activitatea
+utilizatorilor și trimite o notificare prin SMS pentru a confirma dacă doresc să își păstreze
+contul. Conturile inactive vor fi șterse automat după o perioadă mai lungă de timp dacă nu
+sunt confirmate.
+Cerințe de Design:
+●
+Design modern și atractiv, inspirat de site-urile de top menționate.
+●
+Utilizarea de efecte vizuale superbe (3D pentru butoane, active la scroll, fundaluri active)
+implementate fără dependențe externe excesive.
+●
+Interfață intuitivă și ușor de navigat, chiar și cu multe funcționalități.
+●
+Organizarea logică și relevantă a funcționalităților în cadrul site-ului.
+Cerințe de Performanță:
+●
+Site-ul trebuie să fie rapid și performant, chiar și cu un număr mare de utilizatori și cu
+multe funcționalități.
+●
+Optimizarea imaginilor (compresie, redimensionare, lazy loading) este crucială, în special
+pentru pozele de înaltă calitate din profilurile utilizatorilor și din secțiunea de servicii.
+Cerințe Tehnice:
+●
+Utilizarea tehnologiilor web moderne (React/Next.js pentru frontend, Node.js/Express
+pentru backend).
+●
+Bază de date SQLite (pentru simplitate și eliminarea dependențelor de servere externe
+pentru bază de date).
+●
+Minimizarea pe cât posibil a dependențelor externe.
+●
+Implementarea măsurilor de securitate adecvate pentru protecția datelor utilizatorilor.
