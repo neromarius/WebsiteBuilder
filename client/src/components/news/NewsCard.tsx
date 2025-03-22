@@ -209,13 +209,13 @@ export default function NewsCard({ news, compact = false }: NewsCardProps) {
               >
                 <Eye className="h-4 w-4 inline mr-1" /> 
                 <motion.span
-                  animate={viewCount > 100 ? { 
+                  animate={(viewCount || 0) > 100 ? { 
                     scale: [1, 1.1, 1],
                     color: ["#6b7280", "#005BBB", "#6b7280"]
                   } : {}}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
                 >
-                  {viewCount}
+                  {viewCount || 0}
                 </motion.span>
               </motion.span>
               <motion.span 

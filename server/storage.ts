@@ -416,7 +416,22 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        username: insertUser.username,
+        email: insertUser.email,
+        password: insertUser.password,
+        fullName: insertUser.fullName || null,
+        phoneNumber: insertUser.phoneNumber || null,
+        location: insertUser.location || null,
+        about: insertUser.about || null,
+        profileImage: insertUser.profileImage || null,
+        isPremium: insertUser.isPremium || false,
+        isAdmin: insertUser.isAdmin || false,
+        isModerator: insertUser.isModerator || false,
+        socialLinks: insertUser.socialLinks || [],
+        badges: insertUser.badges || [],
+        points: insertUser.points || 0
+      })
       .returning();
     return user;
   }
@@ -449,18 +464,24 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createService(service: InsertService): Promise<Service> {
-    const now = new Date();
     const [newService] = await db
       .insert(services)
       .values({
-        ...service,
-        updatedAt: now,
-        rating: 0,
-        reviewCount: 0,
-        isPremium: false,
-        images: [],
+        userId: service.userId,
+        title: service.title,
+        description: service.description,
+        shortDescription: service.shortDescription,
+        category: service.category,
+        location: service.location || null,
+        contactEmail: service.contactEmail || null,
+        contactPhone: service.contactPhone || null,
+        mainImage: service.mainImage || null,
+        images: service.images || [],
         tags: service.tags || [],
-        socialLinks: service.socialLinks || {},
+        rating: service.rating || 0,
+        reviewCount: service.reviewCount || 0,
+        isPremium: service.isPremium || false,
+        socialLinks: service.socialLinks || {}
       })
       .returning();
     
@@ -511,7 +532,11 @@ export class DatabaseStorage implements IStorage {
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage & { user?: User }> {
     const [newMessage] = await db
       .insert(chatMessages)
-      .values(message)
+      .values({
+        userId: message.userId,
+        roomId: message.roomId,
+        message: message.message
+      })
       .returning();
     
     // Add user information
@@ -537,9 +562,19 @@ export class DatabaseStorage implements IStorage {
     const [newEvent] = await db
       .insert(events)
       .values({
-        ...event,
+        userId: event.userId,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        endDate: event.endDate || null,
+        location: event.location || null,
+        image: event.image || null,
+        category: event.category || null,
         tags: event.tags || [],
         socialLinks: event.socialLinks || {},
+        gpsLocation: event.gpsLocation || null,
+        participantCount: event.participantCount || 0,
+        isParticipating: event.isParticipating || false
       })
       .returning();
     
@@ -590,8 +625,17 @@ export class DatabaseStorage implements IStorage {
   async createEventParticipant(participant: InsertEventParticipant): Promise<EventParticipant> {
     const [newParticipant] = await db
       .insert(eventParticipants)
-      .values(participant)
+      .values({
+        eventId: participant.eventId,
+        userId: participant.userId
+      })
       .returning();
+    
+    // Update event participant count
+    const participants = await this.getEventParticipants(participant.eventId);
+    await this.updateEvent(participant.eventId, {
+      participantCount: participants.length
+    });
     
     return newParticipant;
   }
@@ -606,6 +650,14 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .returning();
+    
+    if (deletedParticipant) {
+      // Update event participant count
+      const participants = await this.getEventParticipants(eventId);
+      await this.updateEvent(eventId, {
+        participantCount: participants.length
+      });
+    }
     
     return !!deletedParticipant;
   }
@@ -627,7 +679,13 @@ export class DatabaseStorage implements IStorage {
     const [newNewsItem] = await db
       .insert(news)
       .values({
-        ...newsItem,
+        title: newsItem.title,
+        content: newsItem.content,
+        source: newsItem.source,
+        sourceUrl: newsItem.sourceUrl,
+        category: newsItem.category || null,
+        image: newsItem.image || null,
+        publishedAt: newsItem.publishedAt,
         viewCount: 0,
         commentCount: 0
       })
@@ -686,8 +744,14 @@ async function initializeDatabase() {
         fullName: "Administrator",
         phoneNumber: "+32123456789",
         location: "Bruxelles",
+        about: "Administrator al comunității românilor din Belgia",
+        profileImage: null,
         isAdmin: true,
-        isPremium: true
+        isModerator: true,
+        isPremium: true,
+        socialLinks: [],
+        badges: ["admin", "moderator"],
+        points: 1000
       });
       console.log("Created admin user");
     }
