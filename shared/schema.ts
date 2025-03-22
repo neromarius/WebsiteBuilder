@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, index, uniqueIndex, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users
 export const users = pgTable("users", {
@@ -43,7 +44,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 // Services
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   shortDescription: text("short_description").notNull(),
@@ -60,6 +61,12 @@ export const services = pgTable("services", {
   socialLinks: json("social_links").$type<{[key: string]: string}>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: index("service_user_id_idx").on(table.userId),
+    categoryIdx: index("service_category_idx").on(table.category),
+    locationIdx: index("service_location_idx").on(table.location),
+  };
 });
 
 export const insertServiceSchema = createInsertSchema(services).pick({
@@ -83,10 +90,16 @@ export const insertServiceSchema = createInsertSchema(services).pick({
 // Chat messages
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   roomId: text("room_id").notNull(),
   message: text("message").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: index("chat_user_id_idx").on(table.userId),
+    roomIdIdx: index("chat_room_id_idx").on(table.roomId),
+    createdAtIdx: index("chat_created_at_idx").on(table.createdAt),
+  };
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
@@ -98,7 +111,7 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
 // Events
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
@@ -112,6 +125,13 @@ export const events = pgTable("events", {
   gpsLocation: text("gps_location"),
   participantCount: integer("participant_count").default(0),
   isParticipating: boolean("is_participating").default(false),
+}, (table) => {
+  return {
+    userIdIdx: index("event_user_id_idx").on(table.userId),
+    dateIdx: index("event_date_idx").on(table.date),
+    categoryIdx: index("event_category_idx").on(table.category),
+    locationIdx: index("event_location_idx").on(table.location),
+  };
 });
 
 export const insertEventSchema = createInsertSchema(events).pick({
@@ -133,9 +153,15 @@ export const insertEventSchema = createInsertSchema(events).pick({
 // Event participants
 export const eventParticipants = pgTable("event_participants", {
   id: serial("id").primaryKey(),
-  eventId: integer("event_id").notNull(),
-  userId: integer("user_id").notNull(),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    eventIdIdx: index("participant_event_id_idx").on(table.eventId),
+    userIdIdx: index("participant_user_id_idx").on(table.userId),
+    eventUserUniqueIdx: uniqueIndex("event_user_unique_idx").on(table.eventId, table.userId),
+  };
 });
 
 export const insertEventParticipantSchema = createInsertSchema(eventParticipants).pick({
@@ -156,6 +182,12 @@ export const news = pgTable("news", {
   createdAt: timestamp("created_at").defaultNow(),
   viewCount: integer("view_count").default(0),
   commentCount: integer("comment_count").default(0),
+}, (table) => {
+  return {
+    publishedAtIdx: index("news_published_at_idx").on(table.publishedAt),
+    categoryIdx: index("news_category_idx").on(table.category),
+    viewCountIdx: index("news_view_count_idx").on(table.viewCount),
+  };
 });
 
 export const insertNewsSchema = createInsertSchema(news).pick({
@@ -185,3 +217,44 @@ export type InsertEventParticipant = z.infer<typeof insertEventParticipantSchema
 
 export type News = typeof news.$inferSelect;
 export type InsertNews = z.infer<typeof insertNewsSchema>;
+
+// Define relations between tables
+export const usersRelations = relations(users, ({ many }) => ({
+  services: many(services),
+  events: many(events),
+  chatMessages: many(chatMessages),
+  eventParticipations: many(eventParticipants),
+}));
+
+export const servicesRelations = relations(services, ({ one }) => ({
+  user: one(users, {
+    fields: [services.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  user: one(users, {
+    fields: [events.userId],
+    references: [users.id],
+  }),
+  participants: many(eventParticipants),
+}));
+
+export const eventParticipantsRelations = relations(eventParticipants, ({ one }) => ({
+  event: one(events, {
+    fields: [eventParticipants.eventId],
+    references: [events.id],
+  }),
+  user: one(users, {
+    fields: [eventParticipants.userId],
+    references: [users.id],
+  }),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  user: one(users, {
+    fields: [chatMessages.userId],
+    references: [users.id],
+  }),
+}));
