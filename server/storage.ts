@@ -6,6 +6,8 @@ import {
   eventParticipants, type EventParticipant, type InsertEventParticipant,
   news, type News, type InsertNews,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, SQL } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -394,4 +396,308 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...userData,
+        lastActive: new Date()
+      })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser || undefined;
+  }
+  
+  // Service methods
+  async getServices(): Promise<Service[]> {
+    return await db.select().from(services);
+  }
+  
+  async getService(id: number): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service || undefined;
+  }
+  
+  async getServicesByUser(userId: number): Promise<Service[]> {
+    return await db.select().from(services).where(eq(services.userId, userId));
+  }
+  
+  async createService(service: InsertService): Promise<Service> {
+    const now = new Date();
+    const [newService] = await db
+      .insert(services)
+      .values({
+        ...service,
+        updatedAt: now,
+        rating: 0,
+        reviewCount: 0,
+        isPremium: false,
+        images: [],
+        tags: service.tags || [],
+        socialLinks: service.socialLinks || {},
+      })
+      .returning();
+    
+    return newService;
+  }
+  
+  async updateService(id: number, serviceData: Partial<Service>): Promise<Service | undefined> {
+    const [updatedService] = await db
+      .update(services)
+      .set({
+        ...serviceData,
+        updatedAt: new Date()
+      })
+      .where(eq(services.id, id))
+      .returning();
+    
+    return updatedService || undefined;
+  }
+  
+  async deleteService(id: number): Promise<boolean> {
+    const [deletedService] = await db
+      .delete(services)
+      .where(eq(services.id, id))
+      .returning();
+    
+    return !!deletedService;
+  }
+  
+  // Chat methods
+  async getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]> {
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.roomId, roomId))
+      .orderBy(chatMessages.createdAt);
+    
+    // Add user information to each message
+    const messagesWithUsers = await Promise.all(
+      messages.map(async (message) => {
+        const user = await this.getUser(message.userId);
+        return { ...message, user };
+      })
+    );
+    
+    return messagesWithUsers;
+  }
+  
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage & { user?: User }> {
+    const [newMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    
+    // Add user information
+    const user = await this.getUser(message.userId);
+    return { ...newMessage, user };
+  }
+  
+  // Event methods
+  async getEvents(): Promise<Event[]> {
+    return await db.select().from(events);
+  }
+  
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event || undefined;
+  }
+  
+  async getEventsByUser(userId: number): Promise<Event[]> {
+    return await db.select().from(events).where(eq(events.userId, userId));
+  }
+  
+  async createEvent(event: InsertEvent): Promise<Event> {
+    const [newEvent] = await db
+      .insert(events)
+      .values({
+        ...event,
+        tags: event.tags || [],
+        socialLinks: event.socialLinks || {},
+      })
+      .returning();
+    
+    return newEvent;
+  }
+  
+  async updateEvent(id: number, eventData: Partial<Event>): Promise<Event | undefined> {
+    const [updatedEvent] = await db
+      .update(events)
+      .set(eventData)
+      .where(eq(events.id, id))
+      .returning();
+    
+    return updatedEvent || undefined;
+  }
+  
+  async deleteEvent(id: number): Promise<boolean> {
+    const [deletedEvent] = await db
+      .delete(events)
+      .where(eq(events.id, id))
+      .returning();
+    
+    return !!deletedEvent;
+  }
+  
+  // Event participants methods
+  async getEventParticipants(eventId: number): Promise<EventParticipant[]> {
+    return await db
+      .select()
+      .from(eventParticipants)
+      .where(eq(eventParticipants.eventId, eventId));
+  }
+  
+  async getEventParticipant(eventId: number, userId: number): Promise<EventParticipant | undefined> {
+    const [participant] = await db
+      .select()
+      .from(eventParticipants)
+      .where(
+        and(
+          eq(eventParticipants.eventId, eventId),
+          eq(eventParticipants.userId, userId)
+        )
+      );
+    
+    return participant || undefined;
+  }
+  
+  async createEventParticipant(participant: InsertEventParticipant): Promise<EventParticipant> {
+    const [newParticipant] = await db
+      .insert(eventParticipants)
+      .values(participant)
+      .returning();
+    
+    return newParticipant;
+  }
+  
+  async deleteEventParticipant(eventId: number, userId: number): Promise<boolean> {
+    const [deletedParticipant] = await db
+      .delete(eventParticipants)
+      .where(
+        and(
+          eq(eventParticipants.eventId, eventId),
+          eq(eventParticipants.userId, userId)
+        )
+      )
+      .returning();
+    
+    return !!deletedParticipant;
+  }
+  
+  // News methods
+  async getNews(): Promise<News[]> {
+    return await db
+      .select()
+      .from(news)
+      .orderBy(desc(news.publishedAt));
+  }
+  
+  async getNewsItem(id: number): Promise<News | undefined> {
+    const [newsItem] = await db.select().from(news).where(eq(news.id, id));
+    return newsItem || undefined;
+  }
+  
+  async createNewsItem(newsItem: InsertNews): Promise<News> {
+    const [newNewsItem] = await db
+      .insert(news)
+      .values({
+        ...newsItem,
+        viewCount: 0,
+        commentCount: 0
+      })
+      .returning();
+    
+    return newNewsItem;
+  }
+  
+  async updateNewsItem(id: number, newsData: Partial<News>): Promise<News | undefined> {
+    const [updatedNewsItem] = await db
+      .update(news)
+      .set(newsData)
+      .where(eq(news.id, id))
+      .returning();
+    
+    return updatedNewsItem || undefined;
+  }
+  
+  async deleteNewsItem(id: number): Promise<boolean> {
+    const [deletedNewsItem] = await db
+      .delete(news)
+      .where(eq(news.id, id))
+      .returning();
+    
+    return !!deletedNewsItem;
+  }
+  
+  async incrementNewsViews(id: number): Promise<number> {
+    const newsItem = await this.getNewsItem(id);
+    if (!newsItem) return 0;
+    
+    const [updatedNewsItem] = await db
+      .update(news)
+      .set({ viewCount: (newsItem.viewCount || 0) + 1 })
+      .where(eq(news.id, id))
+      .returning();
+    
+    return updatedNewsItem.viewCount || 0;
+  }
+}
+
+// Create an admin user at startup if it doesn't exist
+async function initializeDatabase() {
+  try {
+    const adminUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, "admin"))
+      .limit(1);
+    
+    if (adminUser.length === 0) {
+      await db.insert(users).values({
+        username: "admin",
+        email: "admin@romaniinbelgia.be",
+        password: "adminpass", // In a production app, this would be hashed
+        fullName: "Administrator",
+        phoneNumber: "+32123456789",
+        location: "Bruxelles",
+        isAdmin: true,
+        isPremium: true
+      });
+      console.log("Created admin user");
+    }
+  } catch (error) {
+    console.error("Error initializing database:", error);
+  }
+}
+
+// Initialize the database
+initializeDatabase().catch(console.error);
+
+// Use DatabaseStorage instead of MemStorage
+export const storage = new DatabaseStorage();
