@@ -1,6 +1,7 @@
 import { 
   users, type User, type InsertUser,
   services, type Service, type InsertService,
+  chatRooms, type ChatRoom, type InsertChatRoom,
   chatMessages, type ChatMessage, type InsertChatMessage,
   events, type Event, type InsertEvent,
   eventParticipants, type EventParticipant, type InsertEventParticipant,
@@ -27,7 +28,14 @@ export interface IStorage {
   updateService(id: number, serviceData: Partial<Service>): Promise<Service | undefined>;
   deleteService(id: number): Promise<boolean>;
   
-  // Chat methods
+  // Chat room methods
+  getChatRooms(options?: { category?: string, isPrivate?: boolean }): Promise<ChatRoom[]>;
+  getChatRoomByRoomId(roomId: string): Promise<ChatRoom | undefined>;
+  createChatRoom(room: InsertChatRoom): Promise<ChatRoom>;
+  updateChatRoom(id: number, roomData: Partial<ChatRoom>): Promise<ChatRoom | undefined>;
+  deleteChatRoom(id: number): Promise<boolean>;
+  
+  // Chat message methods
   getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage & { user?: User }>;
   
@@ -57,6 +65,7 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private services: Map<number, Service>;
+  private chatRooms: Map<number, ChatRoom>;
   private chatMessages: Map<number, ChatMessage>;
   private events: Map<number, Event>;
   private eventParticipants: Map<number, EventParticipant>;
@@ -64,6 +73,7 @@ export class MemStorage implements IStorage {
   
   currentUserId: number;
   currentServiceId: number;
+  currentChatRoomId: number;
   currentChatMessageId: number;
   currentEventId: number;
   currentEventParticipantId: number;
@@ -72,6 +82,7 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.services = new Map();
+    this.chatRooms = new Map();
     this.chatMessages = new Map();
     this.events = new Map();
     this.eventParticipants = new Map();
@@ -79,6 +90,7 @@ export class MemStorage implements IStorage {
     
     this.currentUserId = 1;
     this.currentServiceId = 1;
+    this.currentChatRoomId = 1;
     this.currentChatMessageId = 1;
     this.currentEventId = 1;
     this.currentEventParticipantId = 1;
@@ -208,7 +220,63 @@ export class MemStorage implements IStorage {
     return this.services.delete(id);
   }
   
-  // Chat methods
+  // Chat room methods
+  async getChatRooms(options?: { category?: string, isPrivate?: boolean }): Promise<ChatRoom[]> {
+    let rooms = Array.from(this.chatRooms.values());
+    
+    if (options) {
+      if (options.category) {
+        rooms = rooms.filter(room => room.category === options.category);
+      }
+      
+      if (options.isPrivate !== undefined) {
+        rooms = rooms.filter(room => room.isPrivate === options.isPrivate);
+      }
+    }
+    
+    return rooms.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  
+  async getChatRoomByRoomId(roomId: string): Promise<ChatRoom | undefined> {
+    return Array.from(this.chatRooms.values()).find(room => room.roomId === roomId);
+  }
+  
+  async createChatRoom(room: InsertChatRoom): Promise<ChatRoom> {
+    const id = this.currentChatRoomId++;
+    const now = new Date();
+    
+    const newRoom: ChatRoom = {
+      ...room,
+      id,
+      createdAt: now,
+      icon: room.icon || "message-square",
+      category: room.category || "general",
+      isPrivate: room.isPrivate || false,
+      createdBy: room.createdBy || null
+    };
+    
+    this.chatRooms.set(id, newRoom);
+    return newRoom;
+  }
+  
+  async updateChatRoom(id: number, roomData: Partial<ChatRoom>): Promise<ChatRoom | undefined> {
+    const room = Array.from(this.chatRooms.values()).find(r => r.id === id);
+    if (!room) return undefined;
+    
+    const updatedRoom = {
+      ...room,
+      ...roomData
+    };
+    
+    this.chatRooms.set(id, updatedRoom);
+    return updatedRoom;
+  }
+  
+  async deleteChatRoom(id: number): Promise<boolean> {
+    return this.chatRooms.delete(id);
+  }
+  
+  // Chat message methods
   async getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]> {
     const messages = Array.from(this.chatMessages.values())
       .filter((message) => message.roomId === roomId)
@@ -510,7 +578,65 @@ export class DatabaseStorage implements IStorage {
     return !!deletedService;
   }
   
-  // Chat methods
+  // Chat room methods
+  async getChatRooms(options?: { category?: string, isPrivate?: boolean }): Promise<ChatRoom[]> {
+    let query = db.select().from(chatRooms);
+    
+    if (options) {
+      if (options.category) {
+        query = query.where(eq(chatRooms.category, options.category));
+      }
+      
+      if (options.isPrivate !== undefined) {
+        query = query.where(eq(chatRooms.isPrivate, options.isPrivate));
+      }
+    }
+    
+    return await query.orderBy(chatRooms.name);
+  }
+  
+  async getChatRoomByRoomId(roomId: string): Promise<ChatRoom | undefined> {
+    const [room] = await db.select().from(chatRooms).where(eq(chatRooms.roomId, roomId));
+    return room || undefined;
+  }
+  
+  async createChatRoom(room: InsertChatRoom): Promise<ChatRoom> {
+    const [newRoom] = await db
+      .insert(chatRooms)
+      .values({
+        roomId: room.roomId,
+        name: room.name,
+        description: room.description || null,
+        icon: room.icon || "message-square",
+        category: room.category || "general",
+        isPrivate: room.isPrivate || false,
+        createdBy: room.createdBy || null
+      })
+      .returning();
+    
+    return newRoom;
+  }
+  
+  async updateChatRoom(id: number, roomData: Partial<ChatRoom>): Promise<ChatRoom | undefined> {
+    const [updatedRoom] = await db
+      .update(chatRooms)
+      .set(roomData)
+      .where(eq(chatRooms.id, id))
+      .returning();
+    
+    return updatedRoom || undefined;
+  }
+  
+  async deleteChatRoom(id: number): Promise<boolean> {
+    const [deletedRoom] = await db
+      .delete(chatRooms)
+      .where(eq(chatRooms.id, id))
+      .returning();
+    
+    return !!deletedRoom;
+  }
+  
+  // Chat message methods
   async getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]> {
     const messages = await db
       .select()
