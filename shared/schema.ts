@@ -87,6 +87,34 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   reviewCount: true,
 });
 
+// Chat rooms
+export const chatRooms = pgTable("chat_rooms", {
+  id: serial("id").primaryKey(),
+  roomId: text("room_id").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").default("message-square"),
+  category: text("category").default("general"),
+  isPrivate: boolean("is_private").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+}, (table) => {
+  return {
+    roomIdIdx: index("chat_room_roomid_idx").on(table.roomId),
+    categoryIdx: index("chat_room_category_idx").on(table.category),
+  };
+});
+
+export const insertChatRoomSchema = createInsertSchema(chatRooms).pick({
+  roomId: true,
+  name: true,
+  description: true,
+  icon: true,
+  category: true,
+  isPrivate: true,
+  createdBy: true,
+});
+
 // Chat messages
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
@@ -205,6 +233,9 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
+
+export type ChatRoom = typeof chatRooms.$inferSelect;
+export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
