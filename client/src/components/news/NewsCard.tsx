@@ -224,13 +224,13 @@ export default function NewsCard({ news, compact = false }: NewsCardProps) {
               >
                 <MessageSquare className="h-4 w-4 inline mr-1" /> 
                 <motion.span
-                  animate={commentCount > 10 ? { 
+                  animate={(commentCount || 0) > 10 ? { 
                     scale: [1, 1.1, 1],
                     color: ["#6b7280", "#005BBB", "#6b7280"]
                   } : {}}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
                 >
-                  {commentCount}
+                  {commentCount || 0}
                 </motion.span>
               </motion.span>
             </div>
