@@ -1,0 +1,397 @@
+import { 
+  users, type User, type InsertUser,
+  services, type Service, type InsertService,
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  events, type Event, type InsertEvent,
+  eventParticipants, type EventParticipant, type InsertEventParticipant,
+  news, type News, type InsertNews,
+} from "@shared/schema";
+
+// modify the interface with any CRUD methods
+// you might need
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  
+  // Service methods
+  getServices(): Promise<Service[]>;
+  getService(id: number): Promise<Service | undefined>;
+  getServicesByUser(userId: number): Promise<Service[]>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: number, serviceData: Partial<Service>): Promise<Service | undefined>;
+  deleteService(id: number): Promise<boolean>;
+  
+  // Chat methods
+  getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage & { user?: User }>;
+  
+  // Event methods
+  getEvents(): Promise<Event[]>;
+  getEvent(id: number): Promise<Event | undefined>;
+  getEventsByUser(userId: number): Promise<Event[]>;
+  createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: number, eventData: Partial<Event>): Promise<Event | undefined>;
+  deleteEvent(id: number): Promise<boolean>;
+  
+  // Event participants
+  getEventParticipants(eventId: number): Promise<EventParticipant[]>;
+  getEventParticipant(eventId: number, userId: number): Promise<EventParticipant | undefined>;
+  createEventParticipant(participant: InsertEventParticipant): Promise<EventParticipant>;
+  deleteEventParticipant(eventId: number, userId: number): Promise<boolean>;
+  
+  // News methods
+  getNews(): Promise<News[]>;
+  getNewsItem(id: number): Promise<News | undefined>;
+  createNewsItem(newsItem: InsertNews): Promise<News>;
+  updateNewsItem(id: number, newsData: Partial<News>): Promise<News | undefined>;
+  deleteNewsItem(id: number): Promise<boolean>;
+  incrementNewsViews(id: number): Promise<number>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private services: Map<number, Service>;
+  private chatMessages: Map<number, ChatMessage>;
+  private events: Map<number, Event>;
+  private eventParticipants: Map<number, EventParticipant>;
+  private newsItems: Map<number, News>;
+  
+  currentUserId: number;
+  currentServiceId: number;
+  currentChatMessageId: number;
+  currentEventId: number;
+  currentEventParticipantId: number;
+  currentNewsId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.services = new Map();
+    this.chatMessages = new Map();
+    this.events = new Map();
+    this.eventParticipants = new Map();
+    this.newsItems = new Map();
+    
+    this.currentUserId = 1;
+    this.currentServiceId = 1;
+    this.currentChatMessageId = 1;
+    this.currentEventId = 1;
+    this.currentEventParticipantId = 1;
+    this.currentNewsId = 1;
+    
+    // Create admin user
+    this.createUser({
+      username: "admin",
+      email: "admin@romaniinbelgia.be",
+      password: "adminpass", // In production, this would be hashed
+      fullName: "Administrator",
+      phoneNumber: "+32123456789",
+      location: "Bruxelles",
+      isAdmin: true,
+      isPremium: true
+    });
+    
+    // Create some sample data for testing
+    this.initializeData();
+  }
+  
+  private initializeData() {
+    // This would be initialized with real data in a production app
+    // We're not mocking data as per instructions, just creating empty data structures
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username.toLowerCase() === username.toLowerCase(),
+    );
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email.toLowerCase() === email.toLowerCase(),
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const now = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt: now,
+      lastActive: now,
+      badges: [],
+      points: 0,
+      isAdmin: insertUser.isAdmin || false,
+      isModerator: insertUser.isModerator || false,
+      isPremium: insertUser.isPremium || false,
+      socialLinks: insertUser.socialLinks || [],
+    };
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = {
+      ...user,
+      ...userData,
+      lastActive: new Date()
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  // Service methods
+  async getServices(): Promise<Service[]> {
+    return Array.from(this.services.values());
+  }
+  
+  async getService(id: number): Promise<Service | undefined> {
+    return this.services.get(id);
+  }
+  
+  async getServicesByUser(userId: number): Promise<Service[]> {
+    return Array.from(this.services.values()).filter(
+      (service) => service.userId === userId
+    );
+  }
+  
+  async createService(service: InsertService): Promise<Service> {
+    const id = this.currentServiceId++;
+    const now = new Date();
+    const newService: Service = {
+      ...service,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      rating: 0,
+      reviewCount: 0,
+      isPremium: false,
+      images: [],
+      tags: service.tags || [],
+      socialLinks: service.socialLinks || {},
+    };
+    
+    this.services.set(id, newService);
+    return newService;
+  }
+  
+  async updateService(id: number, serviceData: Partial<Service>): Promise<Service | undefined> {
+    const service = await this.getService(id);
+    if (!service) return undefined;
+    
+    const updatedService = {
+      ...service,
+      ...serviceData,
+      updatedAt: new Date()
+    };
+    
+    this.services.set(id, updatedService);
+    return updatedService;
+  }
+  
+  async deleteService(id: number): Promise<boolean> {
+    return this.services.delete(id);
+  }
+  
+  // Chat methods
+  async getChatMessages(roomId: string): Promise<(ChatMessage & { user?: User })[]> {
+    const messages = Array.from(this.chatMessages.values())
+      .filter((message) => message.roomId === roomId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    
+    // Add user information to each message
+    return Promise.all(
+      messages.map(async (message) => {
+        const user = await this.getUser(message.userId);
+        return { ...message, user };
+      })
+    );
+  }
+  
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage & { user?: User }> {
+    const id = this.currentChatMessageId++;
+    const now = new Date();
+    const newMessage: ChatMessage = {
+      ...message,
+      id,
+      createdAt: now
+    };
+    
+    this.chatMessages.set(id, newMessage);
+    
+    // Add user information
+    const user = await this.getUser(message.userId);
+    return { ...newMessage, user };
+  }
+  
+  // Event methods
+  async getEvents(): Promise<Event[]> {
+    return Array.from(this.events.values());
+  }
+  
+  async getEvent(id: number): Promise<Event | undefined> {
+    return this.events.get(id);
+  }
+  
+  async getEventsByUser(userId: number): Promise<Event[]> {
+    return Array.from(this.events.values()).filter(
+      (event) => event.userId === userId
+    );
+  }
+  
+  async createEvent(event: InsertEvent): Promise<Event> {
+    const id = this.currentEventId++;
+    const now = new Date();
+    const newEvent: Event = {
+      ...event,
+      id,
+      createdAt: now,
+      tags: event.tags || [],
+      socialLinks: event.socialLinks || {},
+    };
+    
+    this.events.set(id, newEvent);
+    return newEvent;
+  }
+  
+  async updateEvent(id: number, eventData: Partial<Event>): Promise<Event | undefined> {
+    const event = await this.getEvent(id);
+    if (!event) return undefined;
+    
+    const updatedEvent = {
+      ...event,
+      ...eventData,
+    };
+    
+    this.events.set(id, updatedEvent);
+    return updatedEvent;
+  }
+  
+  async deleteEvent(id: number): Promise<boolean> {
+    return this.events.delete(id);
+  }
+  
+  // Event participants methods
+  async getEventParticipants(eventId: number): Promise<EventParticipant[]> {
+    return Array.from(this.eventParticipants.values()).filter(
+      (participant) => participant.eventId === eventId
+    );
+  }
+  
+  async getEventParticipant(eventId: number, userId: number): Promise<EventParticipant | undefined> {
+    return Array.from(this.eventParticipants.values()).find(
+      (participant) => participant.eventId === eventId && participant.userId === userId
+    );
+  }
+  
+  async createEventParticipant(participant: InsertEventParticipant): Promise<EventParticipant> {
+    const id = this.currentEventParticipantId++;
+    const now = new Date();
+    const newParticipant: EventParticipant = {
+      ...participant,
+      id,
+      createdAt: now
+    };
+    
+    this.eventParticipants.set(id, newParticipant);
+    
+    // Update event participant count
+    const event = await this.getEvent(participant.eventId);
+    if (event) {
+      const participants = await this.getEventParticipants(participant.eventId);
+      await this.updateEvent(participant.eventId, {
+        participantCount: participants.length
+      });
+    }
+    
+    return newParticipant;
+  }
+  
+  async deleteEventParticipant(eventId: number, userId: number): Promise<boolean> {
+    const participant = await this.getEventParticipant(eventId, userId);
+    if (!participant) return false;
+    
+    const result = this.eventParticipants.delete(participant.id);
+    
+    // Update event participant count
+    if (result) {
+      const event = await this.getEvent(eventId);
+      if (event) {
+        const participants = await this.getEventParticipants(eventId);
+        await this.updateEvent(eventId, {
+          participantCount: participants.length
+        });
+      }
+    }
+    
+    return result;
+  }
+  
+  // News methods
+  async getNews(): Promise<News[]> {
+    return Array.from(this.newsItems.values()).sort(
+      (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
+    );
+  }
+  
+  async getNewsItem(id: number): Promise<News | undefined> {
+    return this.newsItems.get(id);
+  }
+  
+  async createNewsItem(newsItem: InsertNews): Promise<News> {
+    const id = this.currentNewsId++;
+    const now = new Date();
+    const newNewsItem: News = {
+      ...newsItem,
+      id,
+      createdAt: now,
+      viewCount: 0,
+      commentCount: 0
+    };
+    
+    this.newsItems.set(id, newNewsItem);
+    return newNewsItem;
+  }
+  
+  async updateNewsItem(id: number, newsData: Partial<News>): Promise<News | undefined> {
+    const newsItem = await this.getNewsItem(id);
+    if (!newsItem) return undefined;
+    
+    const updatedNewsItem = {
+      ...newsItem,
+      ...newsData,
+    };
+    
+    this.newsItems.set(id, updatedNewsItem);
+    return updatedNewsItem;
+  }
+  
+  async deleteNewsItem(id: number): Promise<boolean> {
+    return this.newsItems.delete(id);
+  }
+  
+  async incrementNewsViews(id: number): Promise<number> {
+    const newsItem = await this.getNewsItem(id);
+    if (!newsItem) return 0;
+    
+    const newViewCount = (newsItem.viewCount || 0) + 1;
+    await this.updateNewsItem(id, { viewCount: newViewCount });
+    
+    return newViewCount;
+  }
+}
+
+export const storage = new MemStorage();
