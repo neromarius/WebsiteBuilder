@@ -30,6 +30,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   fullName: true,
   phoneNumber: true,
   location: true,
+  about: true,
+  profileImage: true,
+  isPremium: true,
+  isAdmin: true,
+  isModerator: true,
+  socialLinks: true,
+  badges: true,
+  points: true,
 });
 
 // Services
@@ -65,6 +73,11 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   contactPhone: true,
   mainImage: true,
   tags: true,
+  socialLinks: true,
+  images: true,
+  isPremium: true,
+  rating: true,
+  reviewCount: true,
 });
 
 // Chat messages
@@ -97,6 +110,8 @@ export const events = pgTable("events", {
   createdAt: timestamp("created_at").defaultNow(),
   socialLinks: json("social_links").$type<{[key: string]: string}>().default({}),
   gpsLocation: text("gps_location"),
+  participantCount: integer("participant_count").default(0),
+  isParticipating: boolean("is_participating").default(false),
 });
 
 export const insertEventSchema = createInsertSchema(events).pick({
@@ -111,6 +126,8 @@ export const insertEventSchema = createInsertSchema(events).pick({
   tags: true,
   socialLinks: true,
   gpsLocation: true,
+  participantCount: true,
+  isParticipating: true,
 });
 
 // Event participants
