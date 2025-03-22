@@ -255,6 +255,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   events: many(events),
   chatMessages: many(chatMessages),
   eventParticipations: many(eventParticipants),
+  chatRoomsCreated: many(chatRooms),
 }));
 
 export const servicesRelations = relations(services, ({ one }) => ({
@@ -279,6 +280,13 @@ export const eventParticipantsRelations = relations(eventParticipants, ({ one })
   }),
   user: one(users, {
     fields: [eventParticipants.userId],
+    references: [users.id],
+  }),
+}));
+
+export const chatRoomsRelations = relations(chatRooms, ({ one }) => ({
+  creator: one(users, {
+    fields: [chatRooms.createdBy],
     references: [users.id],
   }),
 }));
