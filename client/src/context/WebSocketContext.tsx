@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import notificationSound from './notification.mp3'; // Add sound file import
 
 
 interface WebSocketContextType {
